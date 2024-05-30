@@ -1,5 +1,7 @@
 package uz.app.hotel.service;
 
+import uz.app.hotel.database.DB;
+
 public interface UserService {
     void service();
     void showHotels();
@@ -8,4 +10,7 @@ public interface UserService {
     void cancelReservation();
     void rescheduleReservation();
     void showHistory();
+
+
+
 }
