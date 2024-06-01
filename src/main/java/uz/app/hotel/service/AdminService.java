@@ -9,7 +9,7 @@ public interface AdminService {
     void deleteHotel();
     void showUsers();
     void showReservationHistory();
-    void calcelReservation();
+    void cancelReservation();
     void reserveForUser();
 
 //    private static AdminService adminService ;

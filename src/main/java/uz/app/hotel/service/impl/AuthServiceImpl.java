@@ -10,14 +10,15 @@ import uz.app.hotel.util.Context;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.Optional;
 import java.util.Random;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
-import static uz.app.hotel.util.Utill.*;
+import static uz.app.hotel.util.Utill.getInt;
+import static uz.app.hotel.util.Utill.getText;
 
 public class AuthServiceImpl implements AuthService {
 
@@ -26,12 +27,15 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService = UserServiceImpl.getInstance();
     private final AdminService adminService = AdminServiceImpl.getInstance();
 
+
     Logger log = Logger.getLogger("users");
 
     {
         try {
-            FileHandler handler = new FileHandler();
+            FileHandler handler = new FileHandler("resources/",true);
+            handler.setFormatter(new SimpleFormatter());
             log.addHandler(handler);
+            db.addUser(new User("admin","admin","admin",true,"",null,Role.ADMIN));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -57,6 +61,8 @@ public class AuthServiceImpl implements AuthService {
                 case 2 -> {
                     signUp();
                 }
+                case 3->
+                    confirmSms(getText("enter eail"),getText("enter code"));
             }
         }
     }
@@ -65,17 +71,17 @@ public class AuthServiceImpl implements AuthService {
     public void signUp() {
         User user = new User();
         user.setName(getText("enter name"));
-        user.setUsername(getText("enter email"));
+        user.setEmail(getText("enter email"));
         user.setPassword(getText("enter password"));
         user.setRole(Role.USER);
         user.setConfirmed(false);
         user.setConfirmationTime(LocalDateTime.now().plusMinutes(1));
         if (db.ifUserExists(user)) {
-            System.out.println("username exists!");
+            System.out.println("email exists!");
             return;
         }
         user.setCode(generateRandomCode());
-        //send email message
+        Sms.send(user);
         db.addUser(user);
         log.log(Level.INFO, user.toString());
         System.out.println("successfully registered!");
@@ -83,19 +89,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void signIn() {
-        String username = getText("enter username");
+        String email = getText("enter email");
         String password = getText("enter password");
-        Optional<User> optionalUser = db.checkUser(username, password);
+        Optional<User> optionalUser = db.checkUser(email, password);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             Context.setUser(user);
             switch (user.getRole()) {
-                case USER -> {
+                case USER ->
                     userService.service();
-                }
-                case ADMIN -> {
+                case ADMIN ->
                     adminService.service();
-                }
             }
             Context.setUser(null);
         }
@@ -109,20 +113,21 @@ public class AuthServiceImpl implements AuthService {
 
             if (user.getConfirmationTime().isAfter(LocalDateTime.now())) {
                 if (user.getCode().equalsIgnoreCase(code)) {
+                    System.out.println("confirmed");
                     user.setConfirmed(true);
-//                    db.addUser(user);
                 }
             } else {
                 System.out.println("confirmation time expired, we'll send another code!");
                 user.setCode(generateRandomCode());
-                //send email
                 user.setConfirmationTime(LocalDateTime.now().plusMinutes(1));
+                Sms.send(user);
             }
         } else {
             System.out.println("user not found!");
         }
 
     }
+
 
 
     Random random = new Random();

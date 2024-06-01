@@ -1,3 +1,5 @@
+package uz;
+
 import uz.app.hotel.service.impl.AuthServiceImpl;
 
 public class Test {
