@@ -137,9 +137,33 @@ public class DB {
                     LocalDate endDate = res.getEndDate();
                     return (reservation.getStartDate().isAfter(startDate) &&
                             reservation.getStartDate().isBefore(endDate)) ||
-                            (reservation.getEndDate().isAfter(startDate)&&
+                            (reservation.getEndDate().isAfter(startDate) &&
                                     reservation.getEndDate().isBefore(endDate)) ||
-                            (reservation.getStartDate().isBefore(startDate)&&
+                            (reservation.getStartDate().isBefore(startDate) &&
+                                    reservation.getEndDate().isAfter(endDate));
+                })
+                .limit(1)
+                .count();
+    }
+
+    public Boolean checkAvailable(Reservation reservation, String id) {
+        return 0 == reservations
+                .stream()
+                .filter(res ->
+                        !res.getId().equals(id) &&
+                                res.getHotel().getId().equals(reservation.getHotel().getId()) &&
+                                res.getReservationStatus().equals(ReservationStatus.ACTIVE) &&
+                                res.getFloor().equals(reservation.getFloor()) &&
+                                res.getRoom().equals(reservation.getRoom())
+                )
+                .filter(res -> {
+                    LocalDate startDate = res.getStartDate();
+                    LocalDate endDate = res.getEndDate();
+                    return (reservation.getStartDate().isAfter(startDate) &&
+                            reservation.getStartDate().isBefore(endDate)) ||
+                            (reservation.getEndDate().isAfter(startDate) &&
+                                    reservation.getEndDate().isBefore(endDate)) ||
+                            (reservation.getStartDate().isBefore(startDate) &&
                                     reservation.getEndDate().isAfter(endDate));
                 })
                 .limit(1)
@@ -147,14 +171,26 @@ public class DB {
     }
 
     public void addReservation(Reservation reservation) {
-        reservations.add(reservation);
+        Optional<Reservation> any = reservations.stream().parallel().filter(reservation1 ->
+                reservation1.getId().equals(reservation.getId())).findAny();
+        if (any.isEmpty())
+            reservations.add(reservation);
+        else {
+            //edit qilish kerak
+        }
     }
 
-    public List<Reservation> getReservations(User user) {
+    public List<Reservation> getReservations(User user, boolean isAll) {
         return reservations
                 .stream()
                 .filter(reservation -> reservation.getUser().getId().equals(user.getId()))
-                .filter(reservation -> reservation.getReservationStatus().equals(ReservationStatus.ACTIVE))
+                .filter(reservation -> isAll || reservation.getReservationStatus().equals(ReservationStatus.ACTIVE))
                 .toList();
     }
+
+    public Optional<Reservation> getreservation_byId(String id) {
+        return reservations.stream().parallel().filter(s -> s.getId().equals(id)).findAny();
+    }
+
+
 }

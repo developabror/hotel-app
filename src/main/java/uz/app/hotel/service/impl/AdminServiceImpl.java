@@ -4,6 +4,7 @@ import uz.app.hotel.Enums.ReservationStatus;
 import uz.app.hotel.database.DB;
 import uz.app.hotel.entity.*;
 import uz.app.hotel.service.AdminService;
+import uz.app.hotel.service.ReservationService;
 import uz.app.hotel.util.Context;
 import uz.app.hotel.util.Utill;
 
@@ -17,6 +18,7 @@ import static uz.app.hotel.util.Utill.getText;
 
 public class AdminServiceImpl implements AdminService {
     private final DB db = DB.getInstance();
+    private final ReservationServiceImpl reservationService= ReservationServiceImpl.getInstance();
     @Override
     public void service() {
         User user = Context.getCurrentUser();
@@ -103,62 +105,29 @@ public class AdminServiceImpl implements AdminService {
         }
     }
     public void cancelReservation() {
-        String id = getText("Enter ID: ");
-        db.cancelReserv(id, CANCELEDBYADMIN);
+        reservationService.cancelReservation(getText("Enter reservation id"),true);
     }
     public void reserveForUser() {
-        Reservation reservation = new Reservation();
-        Optional<Hotel> optionalHotel = db.getHotelById(getText("Enter id"));
-        if (!optionalHotel.isPresent()) {
-            System.out.println("Hotel not found");
+
+        Optional<Reservation> optionalReservation = reservationService.newReservation();
+        if (optionalReservation.isEmpty()){
             return;
         }
-        if (setHotelToReservation(optionalHotel.get(), reservation)) return;
+        Reservation reservation = optionalReservation.get();
         if (!setUserToReservation(reservation)) {
             System.out.println("some issues occured with date");
             return;
         }
-
-        if (db.checkAvailable(reservation)) {
-            db.addReservation(reservation);
-            System.out.println("reserved");
-        }else {
-            System.out.println("failed!");
-        }
+        reservationService.addReservation(reservation);
     }
     private boolean setUserToReservation(Reservation reservation) {
         String name = getText("Enter name:");
         String email = getText("Enter email:");
         User user = new User(name,email, Role.ANNONYMOUS_USER);
         reservation.setUser(user);
-        LocalDate from = LocalDate.parse(getText("yyyy-mm-dd"));
-        LocalDate to = LocalDate.parse(getText("yyyy-mm-dd"));
-        if (from.isBefore(LocalDate.now()) || to.isBefore(from)){
-            return false;
-        }
-        reservation.setStartDate(from);
-        reservation.setEndDate(to);
-        reservation.setReservationStatus(ReservationStatus.ACTIVE);
         return true;
     }
-    private boolean setHotelToReservation(Hotel hotel, Reservation reservation) {
-        reservation.setHotel(hotel);
-        System.out.printf("Siz maksimal %d balanlikkacha xona zakaz qiloolasiz\n",hotel.getFloors());
-        Integer floor=Math.abs(getInt("Enter floor"));
-        if(floor>hotel.getFloors()){
-            System.out.println("Wrong floor");
-            return true;
-        }
-        reservation.setFloor(floor);
-        System.out.printf("Siz maksimal %d raqamgacha xona bor\n",hotel.getRoomsCount());
-        Integer room=Math.abs(getInt("Enter room number " ));
-        if(room>hotel.getRoomsCount()){
-            System.out.println("Wrong room number ");
-            return true;
-        }
-        reservation.setRoom(room);
-        return false;
-    }
+
 
     private static AdminService adminService;
 

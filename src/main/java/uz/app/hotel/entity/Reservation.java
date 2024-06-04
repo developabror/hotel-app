@@ -11,7 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Reservation {
+public class Reservation implements Cloneable{
     private final String  id= UUID.randomUUID().toString();
     private User user;
     private Hotel hotel;
@@ -21,4 +21,8 @@ public class Reservation {
     private LocalDate endDate;
     private ReservationStatus reservationStatus;
 
+    @Override
+    public Reservation clone() throws CloneNotSupportedException {
+        return (Reservation)super.clone();
+    }
 }

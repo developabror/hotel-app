@@ -10,7 +10,7 @@ public interface ReservationService {
     Reservation showReservation(String id);
     List<Reservation> showReservationByUser(String id);
     List<Reservation> showReservationByHotel(String id);
-    boolean cancelReservation(String id);// kim cancel qilgani va reserv id log ga yozib boriladi
+    boolean cancelReservation(String id,Boolean isAdmin);// kim cancel qilgani va reserv id log ga yozib boriladi
     boolean finishReservation(String id,LocalDate date);
     boolean rescheduleReservation(String id, LocalDate from, LocalDate to);//
 }
